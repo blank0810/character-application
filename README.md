@@ -16,10 +16,8 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository**:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/blank0810/character-application.git
    ```
-
-   Replace `<repository-url>` with the URL of your repository.
 
 2. **Place the project files in your XAMPP's htdocs directory**:
 
