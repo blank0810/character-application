@@ -1,0 +1,306 @@
+@extends('layouts.body')
+@section('title', 'Saved Characters')
+@section('pageSpecificStyle')
+@stop
+@section('content')
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h2><i class="fas fa-save mr-2"></i>Saved Characters</h2>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">List of Saved Characters</h3>
+              </div>
+
+              <div class="card-body">
+                <table class="table table-bordered" id="characterTable">
+                  <thead>
+                    <tr>
+                      <td>ID</td>
+                      <td>Name</td>
+                      <td>Gender</td>
+                      <td>Actions</td>
+                    </tr>
+                  </thead>
+                  <tbody id="characterList">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="info-modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Character information</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div id="info-card" class="card card-secondary card-outline">
+                <div class="card-header">
+                  <input type="text" style="display:none" readonly id="url-id" />
+                  <h4 class="text-muted text-center" id="input-id-text"><strong>Name: </strong> <span
+                      class="small" id="character-name">{Sample Name}</span>
+                  </h4>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col">
+                      <p class="mr-2">Height: <span class="text-muted" id="character-height">{Sample Height}</span></p>
+                    </div>
+                    <div class="col">
+                      <p class="mr-2">Gender: <span class="text-muted" id="character-gender">{Sample Gender}</span></p>
+                    </div>
+                    <div class="col">
+                      <p class="mr-2">Hair Color: <span class="text-muted" id="character-hair-color">{Sample Hair Color}</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" id="closeBtn" class="btn btn-default" data-dismiss="modal">Close</button>
+              <button id="deleteBtn" type="button" class="btn btn-danger">
+                <i class="fas fa-trash mr-2"></i>Delete Character
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.modal-dialog -->
+    </section>
+    <!-- /.content -->
+  </div>
+@endsection
+@section('pagespecificscript')
+  <!-- Handles the dynamic input of data into the table -->
+  <script>
+  $(document).ready(function () {
+    $(document).ready(function () {
+  const characterTable = $("#characterTable").DataTable({
+    paging: true,
+    lengthChange: false,
+    searching: false,
+    ordering: true,
+    info: true,
+    autoWidth: false,
+    responsive: true,
+    pageLength: 10,
+  });
+
+  let isFirstFetch = true;
+
+  function fetchAllCharacters(url = "/get/characters") {
+    if (isFirstFetch) {
+      Swal.fire({
+        title: "Fetching Characters...",
+        html: "Please wait...",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+    }
+
+    $.ajax({
+      url,
+      type: "GET",
+      dataType: "json",
+      success(data) {
+        displayCharacters(data.data);
+
+        if (isFirstFetch) {
+          Swal.close();
+          isFirstFetch = false;
+        }
+
+        if (data.next) {
+          // Fetch the next page if available
+          fetchAllCharacters(data.next);
+        } else {
+          Swal.fire({
+            icon: "success",
+            title: "Characters Loaded!",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+          });
+        }
+      },
+      error(xhr, status, error) {
+        Swal.close();
+        Swal.fire({
+          icon: "error",
+          title: "Error Fetching Data",
+          text: "Something went wrong!",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 4000,
+          timerProgressBar: true,
+        });
+        console.error("Error fetching data:", error);
+      },
+    });
+  }
+
+  function displayCharacters(characters) {
+    $.each(characters, (index, character) => {
+      const row = `
+        <tr>
+          <td>${characterTable.rows().count() + 1}</td>
+          <td>${character.character_name}</td>
+          <td>${character.character_gender}</td>
+          <td>
+            <button
+              type="button"
+              id="view-btn"
+              class="btn btn-primary btn-sm"
+              data-url="${character.character_url}"
+            >
+              <i class="fas fa-info-circle mr-2"></i>View Full Information
+            </button>
+          </td>
+        </tr>
+      `;
+      characterTable.row.add($(row)).draw();
+    });
+  }
+
+  // Start fetching characters
+  fetchAllCharacters();
+});
+});
+</script>
+
+<!-- This is the character info modal -->
+<script>
+  $(document).ready(function () {
+    // View button
+    $(document).on('click', '#view-btn', function () {
+      const url = $(this).data('url');
+
+      Swal.fire({
+        title: 'Fetching Character Info...',
+        html: 'Please wait...',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      $.ajax({
+        url: `/get/character-info`,
+        type: 'GET',
+        data: {'character_url': url },
+        dataType: 'json',
+        success: function (data) {
+          Swal.close();
+          console.log(data.data.character_name);
+
+          $('#url-id').val(url);
+          $('#character-name').text(data.data.character_name);
+          $('#character-height').text(data.data.character_height);
+          $('#character-gender').text(data.data.character_gender);
+          $('#character-hair-color').text(data.data.character_hair_color);
+
+          $('#info-modal').modal('show');
+        },
+        error: function (xhr, status, error) {
+          Swal.close();
+          Swal.fire({
+            icon: 'error',
+            title: 'Error Fetching Data',
+            text: 'Something went wrong while fetching character data!',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+          });
+          console.error('Error fetching data:', error);
+        }
+      });
+    });
+
+    // Delete button
+    $('#deleteBtn').on('click', function() {
+      var characterUrl = $('#url-id').val();
+
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url: '/delete-character',
+            method: 'POST',
+            data: {
+              _token: $('meta[name="csrf-token"]').attr('content'),
+              character_url: characterUrl,
+            },
+            success: function(response) {
+              if (response.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Character Deleted!',
+                  text: 'Your character has been deleted successfully.',
+                  showConfirmButton: true,
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    location.reload();
+                  }
+                });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error Deleting Character',
+                  text: 'Something went wrong! Please try again.',
+                  showConfirmButton: true,
+                });
+              }
+            },
+            error: function(xhr, status, error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error Deleting Character',
+                text: 'Something went wrong! Please try again.' + error.message,
+                showConfirmButton: true,
+              });
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
+@endsection
