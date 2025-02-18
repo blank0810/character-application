@@ -117,7 +117,7 @@ class application_controller extends Controller
     public function saveCharacter(Request $request)
     {
         $request->validate([
-            'character_url' => 'required|string|max:50|unique:characters',
+            'character_url' => 'required|string|max:50|',
             'character_name' => 'required|string|max:50',
             'character_gender' => 'required|string|max:50',
             'character_height' => 'required|string|max:50',
